@@ -1,7 +1,7 @@
 import app from "./index";
 import mongoose from "mongoose";
 
-mongoose.connect("mongodb+srv://abhishekrinku4:UEuhYKIqbxBNdl8i@cluster0.8xpjn8o.mongodb.net/GearSecond")
+mongoose.connect("your_db_string")
         .then(() => {
             console.log("Db connection successful")
         });
