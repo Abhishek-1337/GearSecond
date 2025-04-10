@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 
-const contentSchema = new mongoose.Model({
+const contentSchema = new mongoose.Schema({
     link: { 
         type: String,
         required: true
     },
     type: {
+        type: String,
         enum: {
             values: ['document', 'tweet', "youtube", "link"], 
             message: '{Value} is not supported'
