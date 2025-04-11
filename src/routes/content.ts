@@ -104,4 +104,25 @@ router.put("/:contentId", authMiddleware.protect, async (req: AuthRequest, res) 
     }
 });
 
+router.get("/all", authMiddleware.protect, async (req: AuthRequest, res) => {
+    const userId = req.userId;
+    try{
+
+        const contents = await Content.find({userId: userId});
+        if(contents.length === 0){
+            res.status(404).json({
+                message: "Didn't find any content for you."
+            });
+            return;
+        }
+
+        res.status(200).json({
+            contents,
+        });
+    }
+    catch(ex){
+        console.log(ex);
+    }
+});
+
 export default router;
