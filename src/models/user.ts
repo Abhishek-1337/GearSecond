@@ -1,4 +1,5 @@
 import mongoose, { model } from "mongoose";
+import bcrypt from "bcrypt";
 
 const userSchema = new mongoose.Schema({
     username : {
@@ -30,6 +31,12 @@ const userSchema = new mongoose.Schema({
             message: "Please provide a strong password"
         }
     }
+});
+
+userSchema.pre('save', async function(next) {
+    if(!this.isModified) return next();
+    this.password = await bcrypt.hash(this.password, Number(process.env.salt_round) || 10);
+    next();
 });
 
 const User = mongoose.model('User', userSchema);
