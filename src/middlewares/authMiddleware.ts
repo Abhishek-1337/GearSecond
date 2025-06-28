@@ -12,7 +12,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
         }
 
         const token = req.headers.authorization.split(" ")[1];
-        const decoded = await jwt.verify(token, process.env.jwt_key as string);
+        const decoded = await jwt.verify(token, process.env.access_token_key as string);
         
         if(!decoded){
             res.status(403).json({

@@ -110,7 +110,7 @@ router.get("/all", authMiddleware.protect, async (req: AuthRequest, res) => {
 
         const contents = await Content.find({userId: userId});
         if(contents.length === 0){
-            res.status(404).json({
+            res.status(200).json({
                 message: "Didn't find any content for you."
             });
             return;
