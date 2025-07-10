@@ -6,14 +6,14 @@ import { AuthRequest } from '../types/auth';
 const router = express.Router();
 
 const tokenization = async (userId: string) => {   
-    const access_token = await jwt.sign({ userId: userId }, process.env.access_token_key as string, { expiresIn: '15min'});
+    const access_token = await jwt.sign({ userId: userId }, process.env.access_token_key as string, { expiresIn: '10min'});
     const refresh_token = await jwt.sign({ userId: userId}, process.env.refresh_token_key as string, {
         expiresIn: '7d'
     })
     return { access_token, refresh_token };
 };
 
-router.post("/signup", async (req, res) => {
+router.post("/signup", async (req, res, next) => {
     try{
         console.log(req.body);
         const { username, email, password } = req.body;
@@ -32,24 +32,28 @@ router.post("/signup", async (req, res) => {
 
         const { refresh_token, access_token } = await tokenization(user._id as unknown as string);
         res.cookie("refresh_token", `${refresh_token}`, {
-            httpOnly: true,
-            secure: true
+            httpOnly: true,      // secure from JS access
+  sameSite: 'lax',    // allow cross-origin requests
+  secure: false,       // must be false for HTTP localhost
+  path: '/', 
         });
         res.status(201).json({
+            user: {
+                username: user.username,
+                email: user.email,
+                _id: user._id
+            },
             access_token,
             message: "user created successfully."
         })
     }
     catch(err){
-        console.log(err);
-        res.status(500).json({
-            message: "Something went wrong."
-        })
+        next(err)
     }
 });
 
 
-router.post("/login", async (req, res) => {
+router.post("/login", async (req, res, next) => {
     try{
         const { email, password } = req.body;
         if(!email || !password) {
@@ -68,35 +72,34 @@ router.post("/login", async (req, res) => {
         }
 
         const { refresh_token, access_token } = await tokenization(user._id as unknown as string);
-        res.cookie("refresh_token", `${refresh_token}`, {
-            httpOnly: true,
-            secure: true
-        });
+        res.cookie("refresh_token", `${refresh_token}`);
         res.status(200).json({
+            user: {
+                username: user.username,
+                email: user.email,
+                _id: user._id
+            },
             access_token,
             message: "Logged in successfully"
         });
     }
     catch(ex){
-        console.log(ex);
-        res.status(500).json({
-            errorMessage: "Something went wrong."
-        })
+        next(ex);
     }
 });
 
-// router.get("refresh", (req, res) => {
-//     try{
+router.get("/logout", (req, res) => {
+    try{
         
-//     }
-//     catch(ex){
-//         res.status(500).json({
-//             errorMessage: "Something went wrong."
-//         });
-//     }
-// });
+    }
+    catch(ex){
+        res.status(500).json({
+            errorMessage: "Something went wrong."
+        });
+    }
+});
 
-router.get("/me", async (req:AuthRequest, res) => {
+router.get("/me", async (req:AuthRequest, res, next) => {
     try{
         if(!req.headers.authorization || !req.headers.authorization.startsWith("Bearer")){
             res.status(403).json({
@@ -127,10 +130,21 @@ router.get("/me", async (req:AuthRequest, res) => {
          });
     }
     catch(err){
-        res.status(500).json({
-            message: "Something went wrong"
-        })
+        // console.log(err);
+        next(err);      
     }
+});
+
+router.get("/refresh", async (req, res, next) => {
+        try{
+            console.log(req.cookies.refresh_token);
+            res.status(200).json({
+                message: "Fuddu"
+            });
+        }
+        catch(err){
+            next(err);
+        }
 });
 
 export default router;
