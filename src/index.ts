@@ -5,23 +5,13 @@ import tagRouter from "./routes/tag";
 import cors from "cors";
 import errorMiddleware from './middlewares/errorMiddleware';
 import cookieParser from "cookie-parser";
-import helmet from 'helmet';
 
 const app = express();
 
-app.use(helmet(
-    {
-        contentSecurityPolicy: {
-          directives: {
-            "default-src": ["'self'", "'unsafe-inline'", "*"],
-            "script-src": ["'self'", "*"]
-          },
-        },
-        crossOriginEmbedderPolicy: false,
-    }
-));
-
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 

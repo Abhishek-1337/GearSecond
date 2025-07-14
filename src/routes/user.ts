@@ -72,7 +72,12 @@ router.post("/login", async (req, res, next) => {
         }
 
         const { refresh_token, access_token } = await tokenization(user._id as unknown as string);
-        res.cookie("refresh_token", `${refresh_token}`);
+        res.cookie("refresh_token", refresh_token, {
+            httpOnly: true,
+            secure: false,  // 🔥 must be false on localhost
+            sameSite: 'none',
+            path: '/'
+        });
         res.status(200).json({
             user: {
                 username: user.username,
@@ -100,6 +105,7 @@ router.get("/logout", (req, res) => {
 });
 
 router.get("/me", async (req:AuthRequest, res, next) => {
+    console.log(req);
     try{
         if(!req.headers.authorization || !req.headers.authorization.startsWith("Bearer")){
             res.status(403).json({
@@ -135,16 +141,53 @@ router.get("/me", async (req:AuthRequest, res, next) => {
     }
 });
 
-router.get("/refresh", async (req, res, next) => {
+router.post("/refresh", async (req, res, next) => {
         try{
-            console.log(req.cookies.refresh_token);
+            console.log(req.cookies);
+            if(req.cookies === null || !req.cookies.refresh_token){
+                res.status(401).json({
+                    message: "Missing refresh token"
+                });
+                return;
+            }
+            
+            const decoded = await jwt.verify(req.cookies.refresh_token, process.env.refresh_token_key as string);
+            if(!decoded){
+                res.status(403).json({
+                    message: "Token is invalid."
+                });
+                return;
+            }
+         
+            const userId = (decoded as JwtPayload).userId;
+            const user = await User.findById(userId).select('-password -__v');
+            if(!user) {
+               res.status(404).json({
+                   message: "No user found."
+               });
+               return;
+            }
+
+            const access_token = await jwt.sign({userId: userId}, process.env.access_token_key as string);
+
             res.status(200).json({
-                message: "Fuddu"
+                access_token
             });
         }
         catch(err){
-            next(err);
+            res.status(500).json({
+                message: err
+            })
         }
+});
+
+router.get('/test-cookie', (req, res) => {
+  res.cookie('test_cookie', 'hello', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false,
+  });
+  res.send('Cookie set');
 });
 
 export default router;
